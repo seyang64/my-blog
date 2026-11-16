@@ -1,0 +1,30 @@
+[
+  {
+    "slug": "ai-news-2026-11-16",
+    "title": "AI·개발 뉴스 (11월 16일)",
+    "date": "2026-11-16",
+    "summary": "엔비디아 젠슨 황 CEO 사임, Anthropic 나스닥 상장 일정, Chrome 158의 XSLT 지원 중단 소식을 정리했습니다.",
+    "tags": ["AI 뉴스", "개발"]
+  },
+  {
+    "slug": "today-i-learned",
+    "title": "오늘 배운 것",
+    "date": "2026-11-16",
+    "summary": "Claude Code로 블로그를 만들면서 배운 HTML, CSS, JavaScript의 역할을 정리했습니다.",
+    "tags": ["회고", "웹 기초"]
+  },
+  {
+    "slug": "hello-world",
+    "title": "블로그를 시작합니다",
+    "date": "2026-11-13",
+    "summary": "마크다운으로 글을 쓰는 작은 블로그를 만들었습니다.",
+    "tags": ["소개"]
+  },
+  {
+    "slug": "markdown-test",
+    "title": "Markdown Syntax Test",
+    "date": "2026-11-12",
+    "summary": "블로그가 지원하는 마크다운 문법을 모두 확인하는 테스트용 글입니다.",
+    "tags": ["테스트", "마크다운"]
+  }
+]
