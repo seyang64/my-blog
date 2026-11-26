@@ -23,11 +23,11 @@ my-blog/
 ├── index.html          # Post list (home page)
 ├── post.html           # Single post view: post.html?slug=<file-name-without-.md>
 ├── css/
-│   └── style.css       # All styles, light + dark themes via CSS variables
+│   └── style.css       # All styles, black + neon theme via CSS variables
 ├── js/
-│   ├── app.js          # Loads post list / post, renders the page
+│   ├── app.js          # Loads post list / post, renders the page (grid, tag filter, TOC)
 │   ├── markdown.js     # Markdown → HTML parser (vanilla JS)
-│   └── theme.js        # Dark mode toggle + persistence
+│   └── theme.js        # Neon color switcher + persistence
 └── posts/
     ├── posts.json      # Manifest: list of posts (browsers cannot list directories)
     └── *.md            # Blog posts
@@ -89,11 +89,13 @@ Support at least:
 - Code blocks scroll horizontally (`overflow-x: auto`) instead of breaking layout.
 - Images are responsive (`max-width: 100%; height: auto`).
 
-### Dark Mode
-- Define all colors as CSS custom properties on `:root`, override them under `[data-theme="dark"]`.
-- Default to the OS setting (`prefers-color-scheme`), then let the user toggle with a button in the header.
-- Save the user's choice in `localStorage` and apply it **before first paint** (small inline script in `<head>`) to avoid a flash of the wrong theme.
-- Check contrast in both themes (text vs background at least WCAG AA, 4.5:1).
+### Neon Theme (replaces light/dark mode)
+- The background is **always black** (`#050507`) with a faint neon grid and scanlines; text is **neon-tinted**.
+- Neon color is chosen with `[data-neon="cyan|green|pink|amber"]` on `<html>`. Each sets `--neon` (main accent), `--neon-2` (secondary accent), `--text`, `--text-strong`, `--muted`.
+- Define all colors as CSS custom properties; never hard-code a neon color in a component.
+- The header button (`.neon-switch`, `js/theme.js`) cycles the neon color. The choice is saved in `localStorage` (`neon`) and applied **before first paint** by a small inline script in `<head>`.
+- Use full-strength neon + glow (`--glow`) for headings, links, and accents; use the softer `--text` for body text so long posts stay readable. Keep text contrast at least WCAG AA (4.5:1).
+- Headings and UI labels use the monospace font (terminal look); body text uses the sans font.
 
 ### Mobile / Responsive
 - Mobile-first CSS; include `<meta name="viewport" content="width=device-width, initial-scale=1">`.
@@ -101,11 +103,11 @@ Support at least:
 - Tap targets at least `44px`.
 - No horizontal scrolling on the page itself (tables and code blocks scroll inside their own containers).
 
-### Pages
-- **Header:** blog title (links home) + dark mode toggle.
-- **Home (`index.html`):** list of post cards with title, date, and description, newest first.
-- **Post (`post.html`):** title, date, tags, rendered content, and a "← Back to list" link. Set `document.title` to the post title.
-- **Footer:** simple copyright line.
+### Layout & Pages
+- **Sidebar layout:** on desktop (≥1024px) a sticky left sidebar (`.sidebar`, 290px) holds the logo, neon color switch, and page tools; content sits on the right. On mobile the sidebar stacks above the content.
+- **Home (`index.html`):** terminal-style hero (`> ls ./posts`), then a **grid of post cards** (2 columns ≥640px; the newest post is a full-width featured card). Cards show number, date, title, description, tags. The sidebar has a **tag filter** (horizontal chips on mobile).
+- **Post (`post.html`):** neon title, date, reading time, tags, rendered content, "<- Back to list" links, a reading **progress bar** at the top, and a **table of contents** in the sidebar (built from h2/h3, highlights the current section; collapsible on mobile). Set `document.title` to the post title.
+- **Footer:** copyright line in the sidebar (desktop).
 - Show a friendly message if a post is not found or fails to load.
 
 ## Running Locally
@@ -124,4 +126,4 @@ Then open http://localhost:8000.
 - ES modules (`<script type="module">`), small focused functions.
 - Semantic HTML (`<header>`, `<main>`, `<article>`, `<nav>`, `<footer>`).
 - Keep everything dependency-free and easy to read; comment only non-obvious logic.
-- Test changes in both light and dark mode and at a mobile width (~375px).
+- Test changes with more than one neon color and at a mobile width (~375px) and desktop width (≥1024px).

@@ -5,18 +5,19 @@ const MANIFEST = 'posts/posts.json';
 
 /* ---------- Helpers ---------- */
 
+// Dates are shown terminal-style: 2026.11.26
 function formatDate(value) {
   if (!value) return '';
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return escapeHtml(value);
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}.${m[2]}.${m[3]}` : escapeHtml(value);
 }
 
 function readingTime(text) {
   // ~200 words/min for English; Korean has no spaces between many words,
   // so count CJK/Hangul characters separately (~500 chars/min).
-  const cjk = (text.match(/[぀-ヿ㐀-鿿가-힯]/g) || []).length;
-  const words = text.replace(/[぀-ヿ㐀-鿿가-힯]/g, ' ').split(/\s+/).filter(Boolean).length;
+  const cjkRe = /[぀-ヿ㐀-鿿가-힯]/g;
+  const cjk = (text.match(cjkRe) || []).length;
+  const words = text.replace(cjkRe, ' ').split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 200 + cjk / 500));
 }
 
@@ -45,6 +46,53 @@ async function loadManifest() {
 
 /* ---------- Home page ---------- */
 
+function cardHtml(p, i) {
+  return `
+    <li class="post-card${i === 0 ? ' featured' : ''}">
+      <a href="post.html?slug=${encodeURIComponent(p.slug)}">
+        <div class="card-top">
+          <span class="card-index">${String(i + 1).padStart(2, '0')}</span>
+          <time datetime="${escapeHtml(p.date || '')}">${formatDate(p.date)}</time>
+        </div>
+        <h2>${escapeHtml(p.title || p.slug)}</h2>
+        ${p.description ? `<p>${escapeHtml(p.description)}</p>` : ''}
+        <span class="read-more" aria-hidden="true">read -&gt;</span>
+      </a>
+      ${tagsHtml(p.tags)}
+    </li>`;
+}
+
+function renderGrid(posts, tag) {
+  const list = document.getElementById('post-list');
+  const shown = tag ? posts.filter((p) => toTags(p.tags).includes(tag)) : posts;
+  list.innerHTML = shown.length ? shown.map(cardHtml).join('') : '<li class="status">No posts with this tag.</li>';
+  document.getElementById('post-count').textContent = tag
+    ? `${shown.length} post${shown.length === 1 ? '' : 's'} tagged #${tag}`
+    : `${posts.length} post${posts.length === 1 ? '' : 's'} found`;
+}
+
+function renderTagFilter(posts) {
+  const filter = document.getElementById('tag-filter');
+  const counts = new Map();
+  posts.forEach((p) => toTags(p.tags).forEach((t) => counts.set(t, (counts.get(t) || 0) + 1)));
+  const tags = [...counts.keys()].sort();
+
+  filter.innerHTML = [
+    `<li><button type="button" data-tag="" aria-pressed="true">all <span>${posts.length}</span></button></li>`,
+    ...tags.map(
+      (t) =>
+        `<li><button type="button" data-tag="${escapeHtml(t)}" aria-pressed="false">#${escapeHtml(t)} <span>${counts.get(t)}</span></button></li>`
+    ),
+  ].join('');
+
+  filter.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-tag]');
+    if (!btn) return;
+    filter.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    renderGrid(posts, btn.dataset.tag);
+  });
+}
+
 async function renderHome() {
   const list = document.getElementById('post-list');
   try {
@@ -53,19 +101,8 @@ async function renderHome() {
       list.innerHTML = '<li class="status">No posts yet.</li>';
       return;
     }
-    list.innerHTML = posts
-      .map(
-        (p) => `
-        <li class="post-card">
-          <a href="post.html?slug=${encodeURIComponent(p.slug)}">
-            <time datetime="${escapeHtml(p.date || '')}">${formatDate(p.date)}</time>
-            <h2>${escapeHtml(p.title || p.slug)}</h2>
-            ${p.description ? `<p>${escapeHtml(p.description)}</p>` : ''}
-          </a>
-          ${tagsHtml(p.tags)}
-        </li>`
-      )
-      .join('');
+    renderTagFilter(posts);
+    renderGrid(posts, '');
   } catch (err) {
     list.innerHTML = `<li class="status error">Could not load posts. ${
       location.protocol === 'file:' ? 'Open this site through a local server (see CLAUDE.md).' : escapeHtml(err.message)
@@ -80,27 +117,69 @@ function addCopyButtons(container) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'copy-btn';
-    btn.textContent = 'Copy';
+    btn.textContent = 'copy';
     btn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(pre.querySelector('code').textContent);
-        btn.textContent = 'Copied!';
+        btn.textContent = 'copied!';
       } catch {
-        btn.textContent = 'Failed';
+        btn.textContent = 'failed';
       }
-      setTimeout(() => (btn.textContent = 'Copy'), 1500);
+      setTimeout(() => (btn.textContent = 'copy'), 1500);
     });
     pre.appendChild(btn);
   });
+}
+
+function buildToc(content) {
+  const headings = [...content.querySelectorAll('h2, h3')];
+  const toc = document.getElementById('toc');
+  if (headings.length < 2) return;
+
+  document.getElementById('toc-list').innerHTML = headings
+    .map(
+      (h) =>
+        `<li class="toc-${h.tagName.toLowerCase()}"><a href="#${encodeURIComponent(h.id)}">${escapeHtml(h.textContent)}</a></li>`
+    )
+    .join('');
+  toc.hidden = false;
+  // Collapsed by default on small screens, where the TOC sits above the post.
+  if (window.matchMedia('(max-width: 1023px)').matches) toc.open = false;
+
+  // Highlight the section currently being read.
+  const links = new Map(headings.map((h) => [h, toc.querySelector(`a[href="#${CSS.escape(encodeURIComponent(h.id))}"]`)]));
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        links.forEach((a) => a?.classList.remove('active'));
+        links.get(entry.target)?.classList.add('active');
+      });
+    },
+    { rootMargin: '0px 0px -70% 0px' }
+  );
+  headings.forEach((h) => observer.observe(h));
+}
+
+function trackProgress() {
+  const bar = document.getElementById('progress-bar');
+  const update = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
+  };
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
 }
 
 function showNotFound(article, message) {
   document.title = `Not found — ${SITE_NAME}`;
   article.innerHTML = `
     <div class="not-found">
+      <p class="prompt">&gt; error 404</p>
       <h1>Post not found</h1>
       <p class="muted">${escapeHtml(message)}</p>
-      <p><a href="./">Go back to the post list</a></p>
+      <p><a href="./">&lt;- Go back to the post list</a></p>
     </div>`;
 }
 
@@ -146,9 +225,10 @@ async function renderPost() {
 
   article.innerHTML = `
     <header class="post-header">
+      <p class="prompt">&gt; cat ${escapeHtml(slug)}.md</p>
       <h1>${escapeHtml(title)}</h1>
       <div class="post-meta">
-        ${date ? `<time datetime="${escapeHtml(date)}">${formatDate(date)}</time><span aria-hidden="true">·</span>` : ''}
+        ${date ? `<time datetime="${escapeHtml(date)}">${formatDate(date)}</time><span aria-hidden="true">/</span>` : ''}
         <span>${readingTime(body)} min read</span>
       </div>
       ${tagsHtml(tags)}
@@ -161,6 +241,8 @@ async function renderPost() {
   if (firstH1 && firstH1.tagName === 'H1' && firstH1.textContent.trim() === title.trim()) firstH1.remove();
 
   addCopyButtons(content);
+  buildToc(content);
+  trackProgress();
 
   // Jump to #heading if the URL has one (content was injected after load).
   if (location.hash) {
