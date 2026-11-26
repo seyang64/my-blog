@@ -1,0 +1,23 @@
+[
+  {
+    "slug": "marvel-news",
+    "title": "Marvel news",
+    "date": "2026-11-26",
+    "description": "어벤져스 둠스데이 최종 예고편 신기록부터 시크릿 워즈의 배틀월드 확정까지, 이번 주 마블 영화 소식 요약.",
+    "tags": ["marvel", "mcu", "movie", "news"]
+  },
+  {
+    "slug": "hello-world",
+    "title": "Hello World",
+    "date": "2026-11-26",
+    "description": "The first post on this blog: what it is and how it works.",
+    "tags": ["intro", "blog"]
+  },
+  {
+    "slug": "markdown-guide",
+    "title": "Markdown Guide",
+    "date": "2026-11-25",
+    "description": "Every Markdown feature this blog supports, with examples.",
+    "tags": ["markdown", "guide"]
+  }
+]
