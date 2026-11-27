@@ -1,0 +1,71 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(npx live-server)",
+      "Bash(npx live-server *)",
+      "PowerShell(git *)",
+      "PowerShell(npm test)",
+      "PowerShell(npm test *)",
+      "PowerShell(npx live-server)",
+      "PowerShell(npx live-server *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)",
+      "Bash(rm -r -f *)",
+      "Bash(rm -f -r *)",
+      "Bash(sudo)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)",
+      "Bash(chmod -R 777 *)",
+      "Bash(git push --force)",
+      "Bash(git push --force *)",
+      "Bash(git push -f)",
+      "Bash(git push -f *)",
+      "Bash(git push --force-with-lease)",
+      "Bash(git push --force-with-lease *)",
+      "Bash(git reset --hard)",
+      "Bash(git reset --hard *)",
+      "Bash(rm -r *)",
+      "Bash(rm -R *)",
+      "Bash(rm --recursive *)",
+      "Bash(git clean)",
+      "Bash(git clean *)",
+      "Bash(git rm -r *)",
+      "PowerShell(rm -rf *)",
+      "PowerShell(rm -r *)",
+      "PowerShell(Remove-Item -Recurse *)",
+      "PowerShell(git clean)",
+      "PowerShell(git clean *)",
+      "PowerShell(git rm -r *)",
+      "PowerShell(sudo)",
+      "PowerShell(sudo *)",
+      "PowerShell(chmod 777 *)",
+      "PowerShell(git push --force)",
+      "PowerShell(git push --force *)",
+      "PowerShell(git push -f)",
+      "PowerShell(git push -f *)",
+      "PowerShell(git push --force-with-lease)",
+      "PowerShell(git push --force-with-lease *)",
+      "PowerShell(git reset --hard)",
+      "PowerShell(git reset --hard *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -I \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-dangerous.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
