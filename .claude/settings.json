@@ -51,7 +51,11 @@
       "PowerShell(git push --force-with-lease)",
       "PowerShell(git push --force-with-lease *)",
       "PowerShell(git reset --hard)",
-      "PowerShell(git reset --hard *)"
+      "PowerShell(git reset --hard *)",
+      "Edit(**/.claude/settings.json)",
+      "Edit(**/.claude/settings.local.json)",
+      "Edit(**/.claude/hooks/**)",
+      "Edit(~/.claude/settings.json)"
     ]
   },
   "hooks": {

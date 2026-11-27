@@ -54,6 +54,25 @@ def strip_commit_messages(command):
     return COMMIT_SEGMENT.sub(lambda m: MESSAGE_ARG.sub(r'\1""', m.group(0)), command)
 
 
+# Permission settings and hooks may be read but not changed from the shell.
+# (Edit/Write on these files are blocked by deny rules in settings.json.)
+PROTECTED_PATH = re.compile(r"\.claude[\\/]+(settings(\.local)?\.json|hooks\b)", re.IGNORECASE)
+WRITE_OPERATION = re.compile(
+    r"(?<![0-9&])>(?!&|\s*(/dev/null|\$null)\b)"          # > and >> redirects (not 2>&1, not > /dev/null)
+    r"|\bsed\b[^;&|]*\s-i"                                 # sed -i
+    r"|\b(tee|truncate|dd|cp|mv|ln|chmod|touch|rm|del|erase|copy|move|ren|rename|rmdir|rd)\b"
+    r"|\b(set|add|clear)-content\b|\bout-file\b"
+    r"|\b(copy|move|rename|new|remove)-item\b"
+    r"|\bgit\s+(checkout|restore|rm|mv|stash)\b"
+    r"|open\([^)]*,\s*['\"][wax]|\.write(_text|_bytes|lines)?\s*\(|writeFileSync|appendFileSync",
+    re.IGNORECASE,
+)
+
+
+def touches_protected_file(command):
+    return bool(PROTECTED_PATH.search(command) and WRITE_OPERATION.search(command))
+
+
 def main():
     try:
         data = json.load(sys.stdin)
@@ -61,6 +80,10 @@ def main():
         return 0
     command = (data.get("tool_input") or {}).get("command") or ""
     command = strip_commit_messages(command)
+    if touches_protected_file(command):
+        print("차단됨: 권한 설정 파일(.claude/settings*.json, .claude/hooks)은 셸 명령으로 수정할 수 없습니다.",
+              file=sys.stderr)
+        return 2
     for pattern, label in PATTERNS:
         if re.search(pattern, command, re.IGNORECASE):
             print(f"차단됨: '{label}' 명령은 이 프로젝트에서 허용되지 않습니다.", file=sys.stderr)
